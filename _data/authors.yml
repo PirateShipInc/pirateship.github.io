@@ -1,0 +1,23 @@
+thau0x01:
+  name        : "thau0x01  🏴‍☠️"
+  bio         : "A man handing a computer and no fear to use it."
+  avatar      : "/assets/images/thau0x01.jpg"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github-square"
+      url: "https://github.com/thau0x01"
+    - label: "Twitter"
+      icon: "fab fa-fw fa-twitter-square"
+      url: "https://twitter.com/thau0x01"
+
+vdgonc:
+  name        : "vdgonc"
+  bio         : "Aooobah! Bão?"
+  avatar      : "/assets/images/vdgonc.png"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github-square"
+      url: "https://github.com/vdgonc"
+    - label: "Twitter"
+      icon: "fab fa-fw fa-twitter-square"
+      url: "https://twitter.com/vdgonc"
