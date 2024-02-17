@@ -1,6 +1,6 @@
 thau0x01:
   name        : "thau0x01  🏴‍☠️"
-  bio         : "A man handing a computer and no fear to use it."
+  # bio         : "A man handing a computer and no fear to use it."
   avatar      : "/assets/images/thau0x01.jpg"
   links:
     - label: "GitHub"
@@ -12,7 +12,7 @@ thau0x01:
 
 vdgonc:
   name        : "vdgonc"
-  bio         : "Aooobah! Bão?"
+  # bio         : "Aooobah! Bão?"
   avatar      : "/assets/images/vdgonc.png"
   links:
     - label: "GitHub"
