@@ -1,58 +1,61 @@
 ---
-date:   2024-02-16 00:00:00 -0000
-layout: single
-classes: wide
 title:  "The Stealthy Terraform Trap: From Innocuous Line to Infrastructure Domination"
+date:   2024-02-16 00:00:00 -0000
+excerpt: "How a single line of code can compromise an entire enterprise"
+categories: 
+- research
+- infrastructure
+tags: 
+- "Offensive Security"
 authors: 
 - vdgonc
 - thau0x01
+layout: single
+classes:
+- wide
 ---
+
+![cover-image](/assets/images/posts/the-stealthy-terraform-trap-cover.webp){: .align-center}
 
 In this dive, we unravel the art of turning a seemingly innocuous line of Terraform code into a devastating vector for enterprise compromise. Prepare to explore the stealthy mechanics and strategic cunning behind planting and executing a backdoor that flies under the radar of modern defenses, proving that sometimes the most potent threats to corporate security lurk in the least expected places.
 
 This research was originally presented during the NullByte Security Conference 2022 that took place in November 2022 in Salvador, Bahia, Brazil.
+{: .notice}
 
-### **Introduction**
+## Introduction
 
-The cybersecurity landscape is a battleground where corporate defenses and offensive strategies are in constant evolution. As companies strengthen their digital fortresses with advanced detection systems, firewalls, and incident response protocols, the onus is on attackers and researchers to pioneer methods that infiltrate these defenses with the subtlety of a shadow. This drive to innovate Tactics, Techniques, and Procedures (TTPs) that can navigate and exploit the complexities of modern enterprise security architectures sparked our latest research initiative.
+In the ever-evolving cybersecurity landscape, where companies deploy sophisticated defenses, attackers and researchers must innovate to breach these systems discreetly. Our latest research focuses on leveraging Infrastructure as Code (IaC) pipelines, vital for enterprise infrastructure but also vulnerable to exploitation. We aimed to create undetectable access methods that blend into legitimate processes and bypass conventional security, highlighting the strategic battle between security and subversion.
 
-Tasked with optimizing compromise efficiency, our analysis pinpointed Infrastructure as Code (IaC) pipelines as fertile ground. These pipelines, crucial for deploying and maintaining enterprise infrastructure, offer privileged access vectors, making them prime targets for our study.
+Terraform by HashiCorp streamlines complex infrastructure management, its widespread use and critical role making it a prime target for cyber attacks. Our research demonstrates that altering just a single line in a Terraform project can initiate unauthorized actions. By embedding malicious functions within Terraform providers, we exploit its trusted status to perform covert operations, showcasing the ease with which these tools can be weaponized for data exfiltration and espionage, all while remaining undetected within normal IaC processes.
 
-Our objective was to develop TTPs capable of embedding persistent, undetectable access within corporate infrastructures. The challenge was two-fold: to camouflage our activities within legitimate operations and to circumvent traditional security measures.
+## Background
 
-Focusing on Terraform, a tool integral to infrastructure management, we recognized an opportunity to disguise our malicious intents. Our strategy was to exploit the trust placed in routine operations, integrating harmful capabilities within Terraform to both avoid detection and leverage its legitimate use for data exfiltration.
+Before we dig deeper into the malicious activities, we must understand some concepts of what we are exploiting.
 
-By employing DNS queries to stealthily encode and transmit sensitive data, we showcased our ability to bypass standard security protocols, highlighting the need for continuous innovation in offensive security to address the vulnerabilities of relying solely on traditional defenses.
+**How Terraform works?**
 
-### **Background**
+Terraform relies on two pivotal commands: `init` and `apply`. The `init` command is crucial for initializing a Terraform project. It downloads and installs the necessary providers, which are extensions that Terraform uses to manage resources across various cloud platforms. This command also prepares the project's environment, organizing the working directory by generating essential configuration and state files to track infrastructure changes. 
 
-**The Rise of Infrastructure as Code (IaC)**
+![Terraform Init Command](/assets/images/posts/the-terraform-init-command-workflow.jpeg){: .align-center}
 
-IaC has revolutionized IT infrastructure management, offering rapid deployment, scalability, and improved reliability. However, this progress has also introduced new vulnerabilities, with attackers targeting the growing complexity of codebases for exploitation.
+Following initialization, the `apply` command activates the project's infrastructure blueprint, interpreting Terraform configuration files to ensure the infrastructure aligns with the specified design. It presents a detailed plan of the intended changes for user confirmation, proceeding to provision or update resources upon approval. Together, these commands facilitate Terraform's infrastructure as code methodology, enhancing the integration of planning and execution.
 
-**The Automated Security Challenge**
+![Terraform Apply Command](/assets/images/posts/the-terraform-apply-command-workflow.jpeg){: .align-center}
 
-While automation has significantly enhanced efficiency, it has also shifted the security paradigm. The speed and scale of automated deployments often surpass traditional security measures, opening avenues for innovative attacks.
+## Crafting the Stealthy Provider
 
-**Terraform's Pivotal Role**
+For our demonstration, we've chosen the AWS Terraform provider as our target, focusing on capturing and exfiltrating AWS Credentials from the host. Our process begins by cloning the official provider from its GitHub repository at [`https://github.com/hashicorp/terraform-provider-aws`](https://github.com/hashicorp/terraform-provider-aws).
 
-Terraform by HashiCorp is a key player in IaC, widely used for its capability to manage complex infrastructures efficiently. Its prevalence and the sensitive nature of its operations make it an attractive target for malicious exploitation.
+Once we have our own copy, our primary task is to understand how the provider processes and stores credentials. Our exploration led us to a key piece of code within the provider's source, located in [`terraform-provider-aws/internal/conns/config.go`](https://github.com/hashicorp/terraform-provider-aws/blob/cb64b2a54db44b45509affeb46a23845d1857e89/internal/conns/config.go#L65). The following snippet is pivotal:
 
-**Evolving Threats**
+<script src="https://gist.github.com/thau0x01/2bfabda4081aacf5f03649e62286c21c.js"></script>
 
-The widespread adoption of IaC has expanded the threat landscape, with attackers now focusing on the mechanisms of service deployment and management. This shift necessitates a comprehensive reevaluation of security strategies to protect infrastructure code and deployment pipelines.
+This code segment is critical as it handles the AWS client's configuration, including credentials. Our goal is to modify the provider subtly to intercept these credentials during execution and transmit them to us, exploiting this function's handling of sensitive data.
 
-**The Imperative for Proactive Defense**
 
-The sophistication of attacks targeting IaC environments underscores the importance of proactive security measures. Organizations must enhance their security frameworks to include code integrity, pipeline security, and continuous IaC configuration monitoring.
+**Capturing the creds**
+To capture the credentials we've built a golang library that was then embedded into the provider during it's build process, just before release. 
 
-### **The Malicious Terraform Provider**
-
-Our exploration led us to create a disguised Terraform provider, presenting a seemingly benign tool that embeds itself within IaC workflows to conduct espionage and compromise operations under the radar.
-
-**Crafting the Deception**
-
-The development of our malicious provider was guided by the question of how a tool designed for operational efficiency could be repurposed as an espionage conduit. By embedding mechanisms to detect and exfiltrate sensitive information, we ensured our activities would seamlessly blend with legitimate Terraform operations.
 
 **The Art of Stealthy Exfiltration**
 
