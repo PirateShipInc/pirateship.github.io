@@ -13,9 +13,13 @@ authors:
 layout: single
 classes:
 - wide
+header: 
+  teaser: /assets/images/posts/teaser-the-stealthy-terraform-trap.webp
+  og_image: /assets/images/posts/the-stealthy-terraform-trap-og.webp
+
 ---
 
-![cover-image](/assets/images/posts/the-stealthy-terraform-trap-cover.webp){: .align-center}
+![The Stealthy Terraform Trap: From Innocuous Line to Infrastructure Domination](/assets/images/posts/the-stealthy-terraform-trap-cover.webp){: .align-center}
 
 In this dive, we unravel the art of turning a seemingly innocuous line of Terraform code into a devastating vector for enterprise compromise. Prepare to explore the stealthy mechanics and strategic cunning behind planting and executing a backdoor that flies under the radar of modern defenses, proving that sometimes the most potent threats to corporate security lurk in the least expected places.
 
@@ -66,7 +70,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
 	"github.com/CS-5/exfil2dns"
 	"github.com/miekg/dns"
 )
