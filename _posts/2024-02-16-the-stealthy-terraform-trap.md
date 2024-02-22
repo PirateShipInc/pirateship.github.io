@@ -67,7 +67,7 @@ Terraform, developed by HashiCorp, is a tool for building, changing, and managin
 
 In essence, Terraform uses a declarative configuration language to describe your desired infrastructure, making it possible to create an exact blueprint of your environment. This approach simplifies infrastructure management, automation, and collaboration.
 
-## Strategy, from the Greek stratēgia.
+## Strategy, from the Greek, stratēgia.
 
 Our approach to infiltrating an IaC pipeline hinges on the concept of <span class="underlined">"poisoning" a Terraform provider with malicious code</span>. Crucially, this code must operate stealthily, <span class="underlined">without altering the provider's expected functions</span>. This method ensures that the teams managing the compromised pipeline remain unaware of any breach. This strategy aligns with our goals of maximizing impact while minimizing effort and detectability, drawing inspiration from the ancient Greek concept of stratēgia, where careful planning ensures victory with minimal conflict.
 
