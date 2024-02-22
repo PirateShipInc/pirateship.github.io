@@ -1,6 +1,6 @@
 ---
 title:  "The Stealthy Terraform Trap: From Innocuous Line to Infrastructure Domination"
-date:   2024-02-16 00:00:00 -0000
+date:   2024-02-22 12:00:00 -0300
 excerpt: "How a single line of code can compromise an entire enterprise"
 categories: 
 - research
@@ -69,7 +69,7 @@ In essence, Terraform uses a declarative configuration language to describe your
 
 ## Strategy, from the Greek stratēgia.
 
-Our approach to infiltrating an IaC pipeline hinges on the concept of <span class="underlined">"poisoning" a Terraform provider with malicious code</span>. Crucially, this code must operate stealthily, without altering the provider's expected functions. This method ensures that the teams managing the compromised pipeline remain unaware of any breach. This strategy aligns with our goals of maximizing impact while minimizing effort and detectability, drawing inspiration from the ancient Greek concept of stratēgia, where careful planning ensures victory with minimal conflict.
+Our approach to infiltrating an IaC pipeline hinges on the concept of <span class="underlined">"poisoning" a Terraform provider with malicious code</span>. Crucially, this code must operate stealthily, <span class="underlined">without altering the provider's expected functions</span>. This method ensures that the teams managing the compromised pipeline remain unaware of any breach. This strategy aligns with our goals of maximizing impact while minimizing effort and detectability, drawing inspiration from the ancient Greek concept of stratēgia, where careful planning ensures victory with minimal conflict.
 
 ## Crafting an evil AWS Provider
 
